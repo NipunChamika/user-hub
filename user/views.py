@@ -1,5 +1,8 @@
-from django.shortcuts import render
+from django.contrib import messages
+from django.shortcuts import render, redirect
+from requests.exceptions import RequestException
 import pyrebase
+from .forms import UserForm
 
 
 config = {
@@ -19,3 +22,23 @@ db = firebase.database()
 
 def index(request):
     return render(request, 'index.html')
+
+
+def user_create(request):
+    if request.method == 'POST':
+        form = UserForm(request.POST)
+        if form.is_valid():
+            data = form.cleaned_data
+            print(f'Form Data: { data }')
+            try:
+                db.child('users').push(data)
+                messages.success(request, 'User created successfully!')
+                return redirect('index')
+            except RequestException as e:
+                print(f'Error pushing data to firebase: { e }')
+                messages.error(
+                    request, 'Error connecting to the database. Try again later.')
+    else:
+        form = UserForm()
+
+    return render(request, 'user_form.html')
