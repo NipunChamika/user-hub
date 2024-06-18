@@ -20,8 +20,9 @@ authe = firebase.auth()
 db = firebase.database()
 
 
-def index(request):
-    return render(request, 'index.html')
+def user_list(request):
+    users = db.child('users').get().val().items()
+    return render(request, 'user_list.html', {'users': users})
 
 
 def user_create(request):
@@ -29,7 +30,6 @@ def user_create(request):
         form = UserForm(request.POST)
         if form.is_valid():
             data = form.cleaned_data
-            print(f'Form Data: { data }')
             try:
                 db.child('users').push(data)
                 messages.success(request, 'User created successfully!')
