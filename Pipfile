@@ -6,6 +6,7 @@ name = "pypi"
 [packages]
 django = "*"
 pyrebase4 = "*"
+python-dotenv = "*"
 
 [dev-packages]
 

@@ -1,18 +1,21 @@
+import os
 from django.contrib import messages
 from django.shortcuts import render, redirect
 from requests.exceptions import RequestException
+from dotenv import load_dotenv
 import pyrebase
 from .forms import UserForm
 
+load_dotenv()
 
 config = {
-    "apiKey": "AIzaSyD8LKb-1rSspyI1J1S5gh6226niCs4qLrI",
-    "authDomain": "user-hub-project.firebaseapp.com",
-    "databaseURL": "https://user-hub-project-default-rtdb.asia-southeast1.firebasedatabase.app",
-    "projectId": "user-hub-project",
-    "storageBucket": "user-hub-project.appspot.com",
-    "messagingSenderId": "1087560919378",
-    "appId": "1:1087560919378:web:eef9b3f627c28ec17bb28b"
+    "apiKey": os.getenv('apiKey'),
+    "authDomain": os.getenv('authDomain'),
+    "databaseURL": os.getenv('databaseURL'),
+    "projectId": os.getenv('projectId'),
+    "storageBucket": os.getenv('storageBucket'),
+    "messagingSenderId": os.getenv('messagingSenderId'),
+    "appId": os.getenv('appId')
 }
 
 firebase = pyrebase.initialize_app(config)
@@ -21,8 +24,10 @@ db = firebase.database()
 
 
 def user_list(request):
-    users = db.child('users').get().val().items()
-    return render(request, 'user_list.html', {'users': users})
+    users = db.child('users').get().val()
+    if users is None:
+        users = {}
+    return render(request, 'user_list.html', {'users': users.items()})
 
 
 def user_create(request):
@@ -33,7 +38,7 @@ def user_create(request):
             try:
                 db.child('users').push(data)
                 messages.success(request, 'User created successfully!')
-                return redirect('index')
+                return redirect('user_list')
             except RequestException as e:
                 print(f'Error pushing data to firebase: { e }')
                 messages.error(
@@ -61,3 +66,18 @@ def user_update(request, user_id):
     else:
         form = UserForm(initial=user)
     return render(request, 'user_update.html', {'form': form})
+
+
+def user_delete(request, user_id):
+    user = db.child('users').child(user_id)
+
+    if not user:
+        messages.error(request, 'Incorrect user!')
+
+    try:
+        user.remove()
+        messages.success(request, 'User deleted successfully!')
+    except RequestException:
+        messages.error(request, 'Error deleting user. Try again later.')
+
+    return redirect('user_list')
