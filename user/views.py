@@ -41,4 +41,23 @@ def user_create(request):
     else:
         form = UserForm()
 
-    return render(request, 'user_form.html')
+    return render(request, 'user_create.html')
+
+
+def user_update(request, user_id):
+    user = db.child('users').child(user_id).get().val()
+    print(user)
+    if request.method == 'POST':
+        form = UserForm(request.POST)
+        if form.is_valid():
+            data = form.cleaned_data
+            try:
+                db.child('users').child(user_id).update(data)
+                messages.success(request, 'User updated successfully!')
+                return redirect('user_list')
+            except RequestException:
+                messages.error(
+                    request, 'Error connecting to the database. Try again later.')
+    else:
+        form = UserForm(initial=user)
+    return render(request, 'user_update.html', {'form': form})
